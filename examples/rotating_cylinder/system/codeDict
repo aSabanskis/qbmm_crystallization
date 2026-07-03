@@ -1,0 +1,45 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      codeDict;
+}
+
+coolingWall
+{
+    code
+    #{
+        const scalar t = this->db().time().value();
+
+        const scalar T_init  = 308.15;
+        const scalar T_final = 283.15;
+        const scalar beta    = 0.2/60.0;   // K/s
+
+        scalar Tval = T_init - beta*t;
+        if (Tval < T_final) Tval = T_final;
+
+        operator==(Tval);
+    #};
+}
+
+
+rotatingCylinderWall
+{
+    code
+    #{
+        const scalar omega = 10.0; // rad/s
+
+        vectorField& field = *this;
+        const vectorField& Cf = patch().Cf();
+
+        forAll(field, i)
+        {
+            const scalar x = Cf[i].x();
+            const scalar y = Cf[i].y();
+
+            field[i] = vector(-omega*y, omega*x, 0);
+        }
+    #};
+}

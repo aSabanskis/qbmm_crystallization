@@ -1,0 +1,6 @@
+Make/linux*
+platforms/
+*.o
+*.dep
+*.so
+*.a

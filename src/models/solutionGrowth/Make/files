@@ -1,0 +1,3 @@
+solutionGrowth.C
+
+LIB = $(FOAM_USER_LIBBIN)/libcrystalGrowthModels

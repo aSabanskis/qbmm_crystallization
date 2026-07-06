@@ -1,6 +1,14 @@
-Make/linux*
+**/Make/linux*
 platforms/
+polyMesh/
+postProcessing/
+processor*/
+dynamicCode/
+[1-9]*/
 *.o
 *.dep
 *.so
 *.a
+*.dat
+*.pdf
+log.*

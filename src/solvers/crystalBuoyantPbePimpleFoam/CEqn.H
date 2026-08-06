@@ -68,8 +68,6 @@ volScalarField dm3("dm3", m3 - m3Old);
 
 C.primitiveFieldRef() -= rhoCrystal.value()*kv*dm3.primitiveField();
 
-C.primitiveFieldRef() -= rhoCrystal.value()*kv*dm3.primitiveField();
-
 if (limitC)
 {
     C.max(0.0);

@@ -67,15 +67,32 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
     minAbscissa_(dict.lookupOrDefault("minAbscissa", scalar(0))),
     maxAbscissa_(dict.lookupOrDefault("maxAbscissa", GREAT)),
     kG_("kG", dimLength/dimTime, dict),
-    Csat0_("Csat0", dimMass/dimVolume, dict),
-    dCsatdT_("dCsatdT", dimMass/dimVolume/dimTemperature, dict),
-    Tref_("Tref", dimTemperature, dict),
     g_(dict.lookupOrDefault("g", scalar(1))),
     Eg_("Eg", dimEnergy/dimMoles, dict),
-    R_("R", dimEnergy/dimMoles/dimTemperature, dict),
     alphaG_("alphaG", inv(dimLength), dict),
-    Lg_(dict.lookupOrDefault("Lg", scalar(1)))
-{}
+    Lg_(dict.lookupOrDefault("Lg", scalar(1))),
+    kD_(dict.lookupOrDefault<scalar>("kD", 0)),
+    d_(dict.lookupOrDefault<scalar>("d", 1)),
+    Ed_(dict.lookupOrDefault<scalar>("Ed", 0)),
+    alphaD_(dict.lookupOrDefault<scalar>("alphaD", 0)),
+    Ld_(dict.lookupOrDefault<scalar>("Ld", 0)),
+    minAbscissaD_(dict.lookupOrDefault<scalar>("minAbscissaD", 0)),
+    R_("R", dimEnergy/dimMoles/dimTemperature, dict),
+    CsatCoeffs_
+    (
+        dict.found("CsatCoeffs")
+      ? scalarList(dict.lookup("CsatCoeffs"))
+      : scalarList({4e-5, -0.0034, 0.1024, -0.6255, 13.237})
+    ),
+    celli_(0)
+{
+    if (CsatCoeffs_.size() != 5)
+    {
+        FatalIOErrorInFunction(dict)
+            << "CsatCoeffs must contain 5 polynomial coefficients, "
+            << "highest order first." << exit(FatalIOError);
+    }
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -115,14 +132,28 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
 {
     const scalar Csat = saturationConcentration(T);
 
-    const scalar deltaC =
-        max(C - Csat, scalar(0));
+    if (C >= Csat)
+    {
+        return
+            kG_.value()
+           *Foam::pow(C - Csat, g_)
+           *Foam::exp(-Eg_.value()/(R_.value()*T))
+           *Foam::pow(1.0 + alphaG_.value()*L, Lg_);
+    }
+
+    if (mag(kD_) < SMALL || L < minAbscissaD_)
+    {
+        return 0.0;
+    }
+
+    // kD is negative, so the returned rate shrinks the crystals
     return
-        kG_.value()
-       *Foam::pow(deltaC, g_)
-       *Foam::exp(-Eg_.value()/(R_.value()*T))
-       *Foam::pow(1.0 + alphaG_.value()*L, Lg_);
+        kD_
+       *Foam::pow(Csat - C, d_)
+       *Foam::exp(-Ed_/(R_.value()*T))
+       *Foam::pow(1.0 + alphaD_*L, Ld_);
 }
+
 
 Foam::scalar
 Foam::populationBalanceSubModels::growthModels::solutionGrowth::Kg
@@ -142,11 +173,41 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth::Kg
         growthRate
         (
             abscissa,
-            C[environment],
-            T[environment]
+            C[celli_],
+            T[celli_]
         )
        *pos0(abscissa - minAbscissa_)
        *neg0(abscissa - maxAbscissa_);
+}
+
+
+Foam::scalar
+Foam::populationBalanceSubModels::growthModels::solutionGrowth
+::phaseSpaceConvection
+(
+    const labelList& momentOrder,
+    const label celli,
+    const scalarQuadratureApproximation& quadrature
+)
+{
+    celli_ = celli;
+
+    return growthModel::phaseSpaceConvection(momentOrder, celli, quadrature);
+}
+
+
+Foam::scalar
+Foam::populationBalanceSubModels::growthModels::solutionGrowth
+::phaseSpaceConvection
+(
+    const labelList& momentOrder,
+    const label celli,
+    const velocityQuadratureApproximation& quadrature
+)
+{
+    celli_ = celli;
+
+    return growthModel::phaseSpaceConvection(momentOrder, celli, quadrature);
 }
 
 // ************************************************************************* //

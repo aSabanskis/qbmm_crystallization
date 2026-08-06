@@ -33,7 +33,27 @@ Class
     Foam::populationBalanceSubModels::growthModels::solutionGrowth
 
 Description
-    Growth from solution
+    Growth from, and dissolution into, a solution, following
+
+        Y. C. Liu et al., "Population Balance Model Development Verification
+        and Validation of Cooling Crystallization of Carbamazepine",
+        Cryst. Growth Des. 2020, 20, 5235-5250, eq. (29) / (30):
+
+        supersaturated, C > Csat:
+
+            G = kG (C - Csat)^g exp(-Eg/(R T)) (1 + alphaG L)^Lg     > 0
+
+        undersaturated, C < Csat:
+
+            D = kD (Csat - C)^d exp(-Ed/(R T)) (1 + alphaD L)^Ld     < 0
+
+    The two branches are returned through the same Kg() interface, so a
+    negative rate simply convects the number density towards smaller sizes.
+    Dissolution is off by default (kD = 0).
+
+    All coefficients are in 
+        L in um
+        C in mg/mL
 
 SourceFiles
     solutionGrowth.C
@@ -72,15 +92,40 @@ private:
         //- Maximum value of the abscissa to apply the model
         scalar maxAbscissa_;
 
+        // Growth kinetics
         dimensionedScalar kG_;
-        dimensionedScalar Csat0_;
-        dimensionedScalar dCsatdT_;
-        dimensionedScalar Tref_;
         scalar g_;
         dimensionedScalar Eg_;
-        dimensionedScalar R_;
         dimensionedScalar alphaG_;
         scalar Lg_;
+
+        // Dissolution kinetics (kD <= 0; zero disables dissolution)
+        scalar kD_;
+        scalar d_;
+        scalar Ed_;
+        scalar alphaD_;
+        scalar Ld_;
+
+        //- Crystals smaller than this do not dissolve any further.  A moment
+        //  method has no sink for m0, so without a floor the quadrature
+        //  abscissae are driven through zero and the moment set stops being
+        //  realizable once the fines have dissolved.  Only active in the
+        //  dissolution branch, so it does not prevent nuclei from growing.
+        scalar minAbscissaD_;
+
+        //- Gas constant
+        dimensionedScalar R_;
+
+        //- Coefficients of the solubility polynomial, Csat(Tc), Tc in degC
+        scalarList CsatCoeffs_;
+
+        //- Cell currently being integrated.
+        //  The Kg() interface of OpenQBMM does not carry a cell index, only an
+        //  environment index, so a growth rate that depends on the local
+        //  concentration and temperature would otherwise evaluate every cell
+        //  with the values of cell 0.  phaseSpaceConvection() is given the
+        //  cell, so it is recorded here on the way in.
+        mutable label celli_;
 
 public:
 
@@ -102,19 +147,21 @@ public:
     virtual ~solutionGrowth();
 
 
-    scalar saturationConcentration
-    (
-        const scalar T
-    ) const;
-
-    scalar growthRate
-    (
-        const scalar L,
-        const scalar C,
-        const scalar T
-    ) const;
-    
     // Member Functions
+
+        //- Solubility [mg/mL] at temperature T [K]
+        scalar saturationConcentration
+        (
+            const scalar T
+        ) const;
+
+        //- Signed rate of change of the crystal size [um/s]
+        scalar growthRate
+        (
+            const scalar L,
+            const scalar C,
+            const scalar T
+        ) const;
 
         //- Growth model
         virtual scalar Kg
@@ -123,6 +170,21 @@ public:
             const bool lengthBased,
             const label environment = 0
         ) const;
+
+        //- Record the cell, then use the standard quadrature summation
+        virtual scalar phaseSpaceConvection
+        (
+            const labelList& momentOrder,
+            const label celli,
+            const scalarQuadratureApproximation& quadrature
+        );
+
+        virtual scalar phaseSpaceConvection
+        (
+            const labelList& momentOrder,
+            const label celli,
+            const velocityQuadratureApproximation& quadrature
+        );
 
 };
 

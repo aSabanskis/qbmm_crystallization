@@ -24,6 +24,8 @@ namespace nucleationModels
 }
 
 
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
 Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
 ::solutionNucleation
 (
@@ -35,11 +37,50 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
     kS_(dict.get<scalar>("kS")),
     Es_("Es", dimEnergy/dimMoles, dict),
     R_("R", dimEnergy/dimMoles/dimTemperature, dict),
+    s_(dict.lookupOrDefault<scalar>("s", 1.0)),
+    Ms_(dict.lookupOrDefault<scalar>("Ms", 2.0)),
+    rhoCrystal_(dict.lookupOrDefault<scalar>("rhoCrystal", 1.2e-9)),
+    kv_(dict.lookupOrDefault<scalar>("kv", 1.0)),
     nucleationSize_(dict.lookupOrDefault<scalar>("nucleationSize", 0)),
+    epsilonExp_(dict.lookupOrDefault<scalar>("epsilonExp", 0)),
+    epsilonRef_(dict.lookupOrDefault<scalar>("epsilonRef", 1.0)),
+    epsilonName_(dict.lookupOrDefault<word>("epsilon", "epsilon")),
+    CsatCoeffs_
+    (
+        dict.found("CsatCoeffs")
+      ? scalarList(dict.lookup("CsatCoeffs"))
+      : scalarList({4e-5, -0.0034, 0.1024, -0.6255, 13.237})
+    ),
     C_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("C", "C"))),
-    T_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("T", "T")))
-{}
+    T_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("T", "T"))),
+    m3_
+    (
+        mesh.lookupObject<volScalarField>
+        (
+            dict.lookupOrDefault<word>("m3", "moment.3.populationBalance")
+        )
+    ),
+    epsilonPtr_(nullptr)
+{
+    if (CsatCoeffs_.size() != 5)
+    {
+        FatalIOErrorInFunction(dict)
+            << "CsatCoeffs must contain 5 polynomial coefficients, "
+            << "highest order first." << exit(FatalIOError);
+    }
 
+    if (mag(epsilonExp_) > SMALL)
+    {
+        epsilonPtr_ = &mesh.lookupObject<volScalarField>(epsilonName_);
+
+        Info<< "solutionNucleation: secondary nucleation scaled by ("
+            << epsilonName_ << '/' << epsilonRef_ << ")^" << epsilonExp_
+            << endl;
+    }
+}
+
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
 ::~solutionNucleation()
@@ -70,13 +111,37 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
     const label environment
 ) const
 {
-    const scalar supersaturation =
+    const scalar deltaC =
         max(C_[celli] - saturationConcentration(T_[celli]), scalar(0));
 
-    const scalar B =
+    if (deltaC < SMALL)
+    {
+        return 0.0;
+    }
+
+    // Suspension density, mg solid / mL
+    const scalar M = max(kv_*rhoCrystal_*m3_[celli], scalar(0));
+
+    scalar B =
         kS_
-       *supersaturation
-       *Foam::exp(-Es_.value()/(R_.value()*T_[celli]));
+       *Foam::pow(deltaC, s_)
+       *Foam::exp(-Es_.value()/(R_.value()*T_[celli]))
+       *Foam::pow(M, Ms_);
+
+    if (epsilonPtr_)
+    {
+        B *=
+            Foam::pow
+            (
+                max((*epsilonPtr_)[celli], scalar(0))/epsilonRef_,
+                epsilonExp_
+            );
+    }
+
+    if (momentOrder == 0)
+    {
+        return B;
+    }
 
     return B*Foam::pow(nucleationSize_, momentOrder);
 }

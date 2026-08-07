@@ -87,18 +87,16 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
 {}
 
 
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
 Foam::scalar
 Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
 ::saturationConcentration(const scalar T) const
 {
-    const scalar TC = T - scalar(273.15);
+    const scalar Tc = T - scalar(273.15);
+    const scalarList& a = CsatCoeffs_;
 
-    return
-          4e-5*Foam::pow(TC, 4)
-        - 0.0034*Foam::pow(TC, 3)
-        + 0.1024*Foam::pow(TC, 2)
-        - 0.6255*TC
-        + 13.237;
+    return ((((a[0]*Tc + a[1])*Tc + a[2])*Tc + a[3])*Tc + a[4]);
 }
 
 

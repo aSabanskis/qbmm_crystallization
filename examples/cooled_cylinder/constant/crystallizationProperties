@@ -1,0 +1,44 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+    Crystal phase properties and the prescribed temperature programme.
+
+    Unit system (Liu et al. 2020):
+        L    um          C, Csat, M   mg/mL
+        f    #/um/mL     moments      #/mL * um^k
+        t    s           T            K
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      crystallizationProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Crystal density, mg/um3
+rhoCrystal  rhoCrystal  [1 -3 0 0 0 0 0] 1.2e-9;
+
+// Volume shape factor (1 for cubic particles)
+kv          1.0;
+
+limitC      true;
+
+// Solubility of CBZ form III in ethanol [mg/mL], polynomial in T [degC],
+// highest order first (Liu et al. 2020, Fig. 1)
+CsatCoeffs  (4e-5 -0.0034 0.1024 -0.6255 13.237);
+
+// Only used by the 0-D batch solver; in 3-D the temperature comes from the
+// energy equation with the cooled walls of system/codeDict.
+temperatureProgram table
+(
+    (0      308.15)
+    (1500   283.15)
+    (100000 283.15)
+);
+
+// Only used by the 3-D solver
+DC          DC          [0 2 -1 0 0 0 0] 1e-9;
+ScT         0.7;
+
+// ************************************************************************* //

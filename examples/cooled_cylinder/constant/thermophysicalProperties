@@ -1,0 +1,56 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+    Ethanol.  A Boussinesq equation of state is used so that the quiescent
+    case can develop natural convection when the walls are cooled; with the
+    rhoConst equation of state there would be no buoyancy at all and the
+    "no stirring" case would be pure conduction.
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      thermophysicalProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+thermoType
+{
+    type            heRhoThermo;
+    mixture         pureMixture;
+    transport       const;
+    thermo          hConst;
+    equationOfState Boussinesq;
+    specie          specie;
+    energy          sensibleEnthalpy;
+}
+
+mixture
+{
+    specie
+    {
+        nMoles      1;
+        molWeight   46.07;
+    }
+
+    equationOfState
+    {
+        rho0        789;        // kg/m3 at T0
+        T0          298.15;     // K
+        beta        1.09e-3;    // 1/K, thermal expansion of ethanol
+    }
+
+    thermodynamics
+    {
+        Cp          2440;       // J/kg/K
+        Hf          0;
+    }
+
+    transport
+    {
+        mu          1.1e-3;     // Pa s
+        Pr          16.1;       // mu Cp / k, k = 0.167 W/m/K
+    }
+}
+
+// ************************************************************************* //

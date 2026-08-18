@@ -1,0 +1,32 @@
+/*--------------------------------*- C++ -*----------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      moment.1.populationBalance;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 -2 0 0 0 0 0];
+
+internalField   uniform 286834.734;
+
+boundaryField
+{
+    bottom
+    {
+        type            zeroGradient;
+    }
+    top
+    {
+        type            zeroGradient;
+    }
+    side
+    {
+        type            zeroGradient;
+    }
+}
+
+// ************************************************************************* //

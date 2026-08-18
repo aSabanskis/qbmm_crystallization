@@ -1,0 +1,153 @@
+/*--------------------------------*- C++ -*----------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     crystalBuoyantPbePimpleFoam;
+
+startFrom       startTime;
+startTime       0;
+stopAt          endTime;
+endTime         1800;
+
+deltaT          0.005;
+
+adjustTimeStep  yes;
+maxCo           0.6;
+maxDeltaT       0.05;
+
+writeControl    runTime;
+writeInterval   60;
+purgeWrite      0;
+
+writeFormat     binary;
+writePrecision  8;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable yes;
+
+suppressSolverInfo yes;
+
+libs
+(
+    "libcrystalGrowthModels.so"
+    "libcrystalNucleationModels.so"
+);
+
+functions
+{
+    // Batch averages: what a 0-D model would predict for the whole vessel
+    vesselAverages
+    {
+        type            volFieldValue;
+        libs            (fieldFunctionObjects);
+        writeControl    runTime;
+        writeInterval   5;
+        writeFields     false;
+        log             false;
+        operation       volAverage;
+        fields
+        (
+            C T
+            moment.0.populationBalance
+            moment.1.populationBalance
+            moment.3.populationBalance
+            epsilon
+        );
+    }
+
+    // Spread over the vessel: how far from well mixed the batch is
+    vesselMin
+    {
+        $vesselAverages;
+        operation       min;
+    }
+
+    vesselMax
+    {
+        $vesselAverages;
+        operation       max;
+    }
+
+    // How much motion there is in the vessel
+    magU
+    {
+        type            mag;
+        libs            (fieldFunctionObjects);
+        field           U;
+        result          magU;
+        executeControl  runTime;
+        executeInterval 5;
+        writeControl    writeTime;
+    }
+
+    flowSpeed
+    {
+        $vesselAverages;
+        fields          (magU);
+    }
+
+    // Local supersaturation, written for post-processing
+    supersaturation
+    {
+        type            coded;
+        libs            (utilityFunctionObjects);
+        name            supersaturation;
+        writeControl    writeTime;
+
+        codeExecute
+        #{
+            const volScalarField& C = mesh().lookupObject<volScalarField>("C");
+            const volScalarField& T = mesh().lookupObject<volScalarField>("T");
+
+            static autoPtr<volScalarField> sigmaPtr;
+
+            if (!sigmaPtr)
+            {
+                sigmaPtr.reset
+                (
+                    new volScalarField
+                    (
+                        IOobject
+                        (
+                            "sigma",
+                            mesh().time().timeName(),
+                            mesh(),
+                            IOobject::NO_READ,
+                            IOobject::AUTO_WRITE
+                        ),
+                        C
+                    )
+                );
+            }
+
+            volScalarField& sigma = sigmaPtr();
+
+            forAll(sigma, celli)
+            {
+                const scalar Tc = T[celli] - 273.15;
+                const scalar Csat =
+                    ((((4e-5*Tc - 0.0034)*Tc + 0.1024)*Tc - 0.6255)*Tc
+                   + 13.237);
+
+                sigma[celli] = C[celli] - Csat;
+            }
+
+            sigma.correctBoundaryConditions();
+
+            if (mesh().time().writeTime())
+            {
+                sigma.write();
+            }
+        #};
+    }
+}
+
+// ************************************************************************* //

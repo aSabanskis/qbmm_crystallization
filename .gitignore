@@ -1,6 +1,15 @@
-Make/linux*
+# Build artefacts
+**/Make/linux*
 platforms/
 *.o
 *.dep
 *.so
 *.a
+__pycache__/
+
+# OpenFOAM run artefacts
+log.*
+postProcessing/
+**/constant/polyMesh/
+dynamicCode/
+processor*/

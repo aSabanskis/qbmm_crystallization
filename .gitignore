@@ -13,3 +13,15 @@ postProcessing/
 **/constant/polyMesh/
 dynamicCode/
 processor*/
+
+# OpenFOAM time directories written by a run.  The initial conditions in 0/
+# (and a 0.orig/ template, if there is one) are kept.
+[1-9]/
+[1-9][0-9.]*/
+0.[0-9]*/
+!0.orig/
+
+# Generated OpenFOAM cases of the validation studies; regenerate them with the
+# make_*.py scripts.  The distilled results under validation/*/results are kept.
+validation/*/of/
+validation/*/of3d/

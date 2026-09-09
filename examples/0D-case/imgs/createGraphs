@@ -6,25 +6,29 @@ set mxtics
 set mytics
 set grid xtics ytics mxtics mytics
 set key bottom left Left reverse maxcols 1
-set linetype 1 lc 7 lw 1.5
+set linetype 1 lc 7 lw 2.5
 set linetype 2 lc black dt 2
 
+TC(TK) = TK - 273.15
 rho = 1200
 refcase = '../reference/moments.dat'
 
-set terminal pdfcairo enhanced size 4,3.5 lw 2
-set output 'postProcessing-C.pdf'
+set terminal pdfcairo enhanced size 7,5 lw 2
+set output 'postProcessing-all.pdf'
+set multiplot layout 2,3
+
 set xlabel 'Time, s'
 set ylabel 'Concentration, kg/m^3'
 p \
 '../postProcessing/probes/0/C' u 1:2 w l ti 'OpenFOAM', \
 refcase u 't':'C' w l dt 2 ti 'Reference'
 
+unset key
+set ylabel 'Temperature, ℃'
+p \
+'../postProcessing/probes/0/T' u 1:(TC($2)) w l ti 'OpenFOAM', \
+refcase u 't':(TC(column('T'))) w l dt 2 ti 'Reference'
 
-set terminal pdfcairo enhanced size 7,6 lw 2
-set output 'postProcessing-M.pdf'
-set multiplot layout 2,2
-set key top left
 set ylabel 'Moment M_0, m^{-3}'
 p \
 '../postProcessing/probes/0/moment.0.populationBalance' u 1:2 w l ti 'OpenFOAM', \

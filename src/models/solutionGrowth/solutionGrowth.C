@@ -75,7 +75,17 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
     R_("R", dimEnergy/dimMoles/dimTemperature, dict),
     alphaG_("alphaG", inv(dimLength), dict),
     Lg_(dict.lookupOrDefault("Lg", scalar(1)))
-{}
+{
+    solubilityCurve_.reset
+    (
+        Function1<scalar>::New
+        (
+            "solubility",
+            dict,
+            &mesh
+        ).ptr()
+    );
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -96,12 +106,7 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
 {
     const scalar TC = T - scalar(273.15);
 
-    return
-          4e-5*Foam::pow(TC, 4)
-        - 0.0034*Foam::pow(TC, 3)
-        + 0.1024*Foam::pow(TC, 2)
-        - 0.6255*TC
-        + 13.237;
+    return solubilityCurve_->value(TC);
 }
 
 Foam::scalar

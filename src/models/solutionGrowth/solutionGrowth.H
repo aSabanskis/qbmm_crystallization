@@ -82,6 +82,9 @@ private:
         dimensionedScalar alphaG_;
         scalar Lg_;
 
+        //- Solubility curve (T)
+        autoPtr<Function1<scalar>> solubilityCurve_;
+
 public:
 
         //- Runtime type information

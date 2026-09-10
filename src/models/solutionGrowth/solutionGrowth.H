@@ -121,8 +121,8 @@ private:
         //- Gas constant
         dimensionedScalar R_;
 
-        //- Coefficients of the solubility polynomial, Csat(Tc), Tc in degC
-        scalarList CsatCoeffs_;
+        //- Solubility curve, Csat(Tc), Tc in degC
+        autoPtr<Function1<scalar>> solubilityCurve_;
 
         //- Driving force (C - Csat)/Csat instead of C - Csat
         bool relativeSupersaturation_;

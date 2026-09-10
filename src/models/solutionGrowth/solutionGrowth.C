@@ -78,16 +78,18 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
     Ld_(dict.lookupOrDefault<scalar>("Ld", 0)),
     minAbscissaD_(dict.lookupOrDefault<scalar>("minAbscissaD", 0)),
     R_("R", dimEnergy/dimMoles/dimTemperature, dict),
-    CsatCoeffs_(dict.get<scalarList>("CsatCoeffs")),
     relativeSupersaturation_(false),
     celli_(0)
 {
-    if (CsatCoeffs_.size() != 5)
-    {
-        FatalIOErrorInFunction(dict)
-            << "CsatCoeffs must contain 5 polynomial coefficients, "
-            << "highest order first." << exit(FatalIOError);
-    }
+    solubilityCurve_.reset
+    (
+        Function1<scalar>::New
+        (
+            "solubility",
+            dict,
+            &mesh
+        ).ptr()
+    );
 
     const word ss(dict.getOrDefault<word>("supersaturation", "absolute"));
 
@@ -121,9 +123,8 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
 ) const
 {
     const scalar Tc = T - scalar(273.15);
-    const scalarList& a = CsatCoeffs_;
 
-    return ((((a[0]*Tc + a[1])*Tc + a[2])*Tc + a[3])*Tc + a[4]);
+    return solubilityCurve_->value(Tc);
 }
 
 

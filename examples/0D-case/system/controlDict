@@ -41,6 +41,8 @@ writeFormat     binary;     // Use binary to avoid corruption of moments
 
 writeCompression off;
 
+writePrecision  8;
+
 timeFormat      general;
 
 timePrecision   6;

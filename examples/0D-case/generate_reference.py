@@ -2,11 +2,28 @@
 
 import numpy as np
 from scipy import interpolate
+from scipy.stats import lognorm
 from os.path import join
 
 dirname = "reference"
-filename = join(dirname, "CSD-t0.dat")
-L0, f0 = np.loadtxt(filename, unpack=True)
+
+L1 = 1e-6
+L2 = 200e-6
+N = 199 * 2**3 + 1
+f_max = 4.55161e16
+
+mu = 100e-6
+sigma = 5e-6
+# Convert from mean and standard deviation to lognormal distribution parameters
+# See e.g. https://se.mathworks.com/help/stats/lognormal-distribution.html
+sigma_log = np.sqrt(np.log(1 + (sigma / mu) ** 2))
+mu_log = 2 * np.log(mu) - 0.5 * np.log(sigma**2 + mu**2)
+fun = lognorm(s=sigma_log, scale=np.exp(mu_log))
+print(f"{fun.mean()=:e} {fun.std()=:e}")
+
+L = np.linspace(L1, L2, N)
+f = fun.pdf(L)
+f *= f_max / f.max()
 
 T_data = np.loadtxt("constant/T-curve.dat")
 T_curve = interpolate.interp1d(T_data[:, 0], T_data[:, 1])
@@ -100,8 +117,6 @@ with open(join(dirname, "moments.dat"), "w") as file_out:
     T = calculate_T(t)
     C_sat = calculate_C_sat(T)
     # first, output results at zero time
-    L = L0
-    f = f0
     file_out.write(f"{t}\t{T}\t{C_sat}\t{C}")
     np.savetxt(join(dirname, f"CSD-t{t}.dat"), np.column_stack((L, f)))
     m3old = calculate_moment(L, f, 3)

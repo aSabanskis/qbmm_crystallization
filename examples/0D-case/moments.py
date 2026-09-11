@@ -99,9 +99,11 @@ with open(join(dirname, "moments.dat"), "w") as file_out:
     # output results at t=0
     T = calculate_T(t)
     C_sat = calculate_C_sat(T)
+    # first, output results at zero time
     L = L0
     f = f0
     file_out.write(f"{t}\t{T}\t{C_sat}\t{C}")
+    np.savetxt(join(dirname, f"CSD-t{t}.dat"), np.column_stack((L, f)))
     m3old = calculate_moment(L, f, 3)
     for order in orders:
         m = calculate_moment(L, f, order)
@@ -116,6 +118,8 @@ with open(join(dirname, "moments.dat"), "w") as file_out:
         # method of characteristics
         L += G * dt
         f -= f * dGdL * dt
+        if int(t) % 200 == 0:
+            np.savetxt(join(dirname, f"CSD-t{t}.dat"), np.column_stack((L, f)))
         m3 = calculate_moment(L, f, 3)
         C -= kv * rho * (m3 - m3old)
         file_out.write(f"{t}\t{T}\t{C_sat}\t{C}")

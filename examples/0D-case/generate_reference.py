@@ -93,6 +93,17 @@ def read_param(name, default_value=0):
     return default_value
 
 
+def write_moment(order, value):
+    filename = join("0", f"moment.{order}.populationBalance")
+    lines = open(filename).readlines()
+
+    with open(filename, "w") as f_out:
+        for line in lines:
+            if line.startswith("internalField"):
+                line = f"internalField   uniform {value:.8e};\n"
+            f_out.write(line)
+
+
 kG = read_param("kG", 1e-8)
 g = read_param("g", 0)
 Eg = read_param("Eg", 0)
@@ -123,6 +134,7 @@ with open(join(dirname, "moments.dat"), "w") as file_out:
     for order in orders:
         m = calculate_moment(L, f, order)
         file_out.write(f"\t{m:.9e}")
+        write_moment(order, m)
     file_out.write("\n")
     while t < t_max:
         t += dt

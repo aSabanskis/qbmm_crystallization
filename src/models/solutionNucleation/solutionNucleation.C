@@ -46,6 +46,7 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
     epsilonRef_(dict.lookupOrDefault<scalar>("epsilonRef", 1.0)),
     epsilonName_(dict.lookupOrDefault<word>("epsilon", "epsilon")),
     CsatCoeffs_(dict.get<scalarList>("CsatCoeffs")),
+    relativeSupersaturation_(false),
     C_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("C", "C"))),
     T_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("T", "T"))),
     m3_
@@ -62,6 +63,19 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
         FatalIOErrorInFunction(dict)
             << "CsatCoeffs must contain 5 polynomial coefficients, "
             << "highest order first." << exit(FatalIOError);
+    }
+
+    const word ss(dict.getOrDefault<word>("supersaturation", "absolute"));
+
+    if (ss == "relative")
+    {
+        relativeSupersaturation_ = true;
+    }
+    else if (ss != "absolute")
+    {
+        FatalIOErrorInFunction(dict)
+            << "supersaturation must be absolute or relative, not " << ss
+            << exit(FatalIOError);
     }
 
     if (mag(epsilonExp_) > SMALL)
@@ -104,8 +118,15 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
     const label environment
 ) const
 {
-    const scalar deltaC =
-        max(C_[celli] - saturationConcentration(T_[celli]), scalar(0));
+    const scalar Csat = saturationConcentration(T_[celli]);
+
+    // Driving force: C - Csat, or (C - Csat)/Csat
+    scalar deltaC = max(C_[celli] - Csat, scalar(0));
+
+    if (relativeSupersaturation_)
+    {
+        deltaC /= Csat;
+    }
 
     if (deltaC < SMALL)
     {

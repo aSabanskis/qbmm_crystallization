@@ -79,6 +79,7 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
     minAbscissaD_(dict.lookupOrDefault<scalar>("minAbscissaD", 0)),
     R_("R", dimEnergy/dimMoles/dimTemperature, dict),
     CsatCoeffs_(dict.get<scalarList>("CsatCoeffs")),
+    relativeSupersaturation_(false),
     celli_(0)
 {
     if (CsatCoeffs_.size() != 5)
@@ -86,6 +87,19 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
         FatalIOErrorInFunction(dict)
             << "CsatCoeffs must contain 5 polynomial coefficients, "
             << "highest order first." << exit(FatalIOError);
+    }
+
+    const word ss(dict.getOrDefault<word>("supersaturation", "absolute"));
+
+    if (ss == "relative")
+    {
+        relativeSupersaturation_ = true;
+    }
+    else if (ss != "absolute")
+    {
+        FatalIOErrorInFunction(dict)
+            << "supersaturation must be absolute or relative, not " << ss
+            << exit(FatalIOError);
     }
 }
 
@@ -124,11 +138,14 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
 {
     const scalar Csat = saturationConcentration(T);
 
+    // Driving force: C - Csat, or (C - Csat)/Csat
+    const scalar scale = relativeSupersaturation_ ? 1.0/Csat : 1.0;
+
     if (C >= Csat)
     {
         return
             kG_.value()
-           *Foam::pow(C - Csat, g_)
+           *Foam::pow((C - Csat)*scale, g_)
            *Foam::exp(-Eg_.value()/(R_.value()*T))
            *Foam::pow(1.0 + alphaG_.value()*L, Lg_);
     }
@@ -141,7 +158,7 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
     // kD is negative, so the returned rate shrinks the crystals
     return
         kD_
-       *Foam::pow(Csat - C, d_)
+       *Foam::pow((Csat - C)*scale, d_)
        *Foam::exp(-Ed_/(R_.value()*T))
        *Foam::pow(1.0 + alphaD_*L, Ld_);
 }

@@ -24,6 +24,10 @@ Description
     which feeds back into M^Ms and can trigger a runaway.  Values of L0 above
     a few micrometres are therefore not advisable.
 
+    With `supersaturation relative` the driving force is the relative
+    supersaturation sigma = (C - Csat)/Csat = S - 1 instead of C - Csat, i.e.
+    B = kS sigma^s ..., the form of most power-law primary nucleation fits.
+
     All coefficients are in 
         L in um
         C and M in mg/mL
@@ -86,6 +90,9 @@ private:
 
         //- Coefficients of the solubility polynomial, Csat(Tc) with Tc in degC
         scalarList CsatCoeffs_;
+
+        //- Driving force (C - Csat)/Csat instead of C - Csat
+        bool relativeSupersaturation_;
 
         //- Concentration, temperature and third moment fields
         const volScalarField& C_;

@@ -51,6 +51,11 @@ Description
     negative rate simply convects the number density towards smaller sizes.
     Dissolution is off by default (kD = 0).
 
+    With `supersaturation relative` the driving force is the relative
+    supersaturation sigma = (C - Csat)/Csat = S - 1 instead of C - Csat (and
+    (Csat - C)/Csat for dissolution), as in power-law kinetics of the form
+    G = kG sigma^g.
+
     All coefficients are in 
         L in um
         C in mg/mL
@@ -118,6 +123,9 @@ private:
 
         //- Coefficients of the solubility polynomial, Csat(Tc), Tc in degC
         scalarList CsatCoeffs_;
+
+        //- Driving force (C - Csat)/Csat instead of C - Csat
+        bool relativeSupersaturation_;
 
         //- Cell currently being integrated.
         //  The Kg() interface of OpenQBMM does not carry a cell index, only an

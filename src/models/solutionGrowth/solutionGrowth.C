@@ -78,12 +78,7 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
     Ld_(dict.lookupOrDefault<scalar>("Ld", 0)),
     minAbscissaD_(dict.lookupOrDefault<scalar>("minAbscissaD", 0)),
     R_("R", dimEnergy/dimMoles/dimTemperature, dict),
-    CsatCoeffs_
-    (
-        dict.found("CsatCoeffs")
-      ? scalarList(dict.lookup("CsatCoeffs"))
-      : scalarList({4e-5, -0.0034, 0.1024, -0.6255, 13.237})
-    ),
+    CsatCoeffs_(dict.get<scalarList>("CsatCoeffs")),
     celli_(0)
 {
     if (CsatCoeffs_.size() != 5)

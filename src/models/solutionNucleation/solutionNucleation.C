@@ -45,12 +45,7 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
     epsilonExp_(dict.lookupOrDefault<scalar>("epsilonExp", 0)),
     epsilonRef_(dict.lookupOrDefault<scalar>("epsilonRef", 1.0)),
     epsilonName_(dict.lookupOrDefault<word>("epsilon", "epsilon")),
-    CsatCoeffs_
-    (
-        dict.found("CsatCoeffs")
-      ? scalarList(dict.lookup("CsatCoeffs"))
-      : scalarList({4e-5, -0.0034, 0.1024, -0.6255, 13.237})
-    ),
+    CsatCoeffs_(dict.get<scalarList>("CsatCoeffs")),
     C_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("C", "C"))),
     T_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("T", "T"))),
     m3_

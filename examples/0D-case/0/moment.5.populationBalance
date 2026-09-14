@@ -21,9 +21,9 @@ internalField   uniform 5.83062272e-09;
 
 boundaryField
 {
-    boundary
+    ".*"
     {
-        type    empty;
+        type    zeroGradient;
     }
 }
 

@@ -15,7 +15,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fieldMomentInversion    extendedFieldMomentInversion;
+fieldMomentInversion    basicFieldMomentInversion;
 
 extendedMomentInversion
 {
@@ -32,6 +32,12 @@ extendedMomentInversion
     }
 }
 
+basicMomentInversion
+{
+    univariateMomentInversion GQMOM;
+    ndfTypeRPlus gamma; // optional - alternative: lognormal
+}
+
 momentAdvection
 {
     univariateMomentAdvection   noAdvection;
@@ -44,12 +50,15 @@ moments
     (2)
     (3)
     (4)
+    (5)
 );
 
 nodes
 (
     (0)
     (1)
+    (2)
+    (3)
 );
 
 // ************************************************************************* //

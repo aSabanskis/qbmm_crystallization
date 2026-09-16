@@ -10,6 +10,10 @@ runApplication blockMesh
 
 runApplication crystalBuoyantPbePimpleFoam
 
+for t in $(foamListTimes -withZero); do
+    runApplication -s $t reconstructPointDistribution -time $t
+done
+
 ( cd imgs && ./createGraphs )
 
 # ----------------------------------------------------------------- end-of-file

@@ -10,56 +10,40 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "constant";
-    object      quadratureProperties;
+    location    "system";
+    object      pointDistributionDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fieldMomentInversion    basicFieldMomentInversion;
+// Name of the quadrature approximation (phase name for multiphase solvers)
+phases (populationBalance);
 
-extendedMomentInversion
+populationBalance
 {
-    extendedMomentInversion     lognormal;
+    useMean off;
 
-    maxSigmaIter        1000;
-    momentsTol          1.0e-6;
-    sigmaTol            1.0e-8;
-    targetFunctionTol   1.0e-8;
-    minVariance         1e-11; // adjust if reconstructPointDistribution fails
+    // Number of points where to calculate the reconstructed distribution
+    nSamples    797;
 
-    basicQuadrature
+    // Minimum value of the abscissa used to plot the reconstructed
+    // distribution (it must != 0).
+    xMin 1e-6;
+
+    // Maximum value of the abscissa used to plot the reconstructed
+    // distribution
+    xMax 200e-6;
+
+    // Location where the distribution needs to be reconstructed
+    // No field specification is necessary
+    probes
     {
-        univariateMomentInversion   Gauss;
-    }
+        probeLocations
+        (
+            (0.5 0.5 0.5)
+        );
+
+        fields
+        ();
+    };
 }
-
-basicMomentInversion
-{
-    univariateMomentInversion GQMOM;
-    ndfTypeRPlus gamma; // optional - alternative: lognormal
-}
-
-momentAdvection
-{
-    univariateMomentAdvection   noAdvection;
-}
-
-moments
-(
-    (0)
-    (1)
-    (2)
-    (3)
-    (4)
-    (5)
-);
-
-nodes
-(
-    (0)
-    (1)
-    (2)
-    (3)
-);
-
 // ************************************************************************* //

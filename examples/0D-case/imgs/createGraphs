@@ -13,12 +13,13 @@ TC(TK) = TK - 273.15
 rho = 1200
 refcase = '../reference/moments.dat'
 
-set terminal pdfcairo enhanced size 7,5 lw 2
+set terminal pdfcairo enhanced size 8,4.5 lw 2
 set output 'postProcessing-all.pdf'
-set multiplot layout 2,3
+set multiplot layout 2,4
 
 set xlabel 'Time, s'
 set ylabel 'Temperature, ℃'
+set format y "%g"
 p \
 '../postProcessing/probes/0/T' u 1:(TC($2)) w l ti 'OpenFOAM', \
 refcase u 't':(TC(column('T'))) w l dt 2 ti 'Reference'
@@ -49,6 +50,16 @@ set ylabel 'Moment M_3, -'
 p \
 '../postProcessing/probes/0/moment.3.populationBalance' u 1:2 w l ti 'OpenFOAM', \
 refcase u 't':'M3' w l dt 2 ti 'Reference'
+
+set ylabel 'Moment M_4, m^1'
+p \
+'../postProcessing/probes/0/moment.4.populationBalance' u 1:2 w l ti 'OpenFOAM', \
+refcase u 't':'M4' w l dt 2 ti 'Reference'
+
+set ylabel 'Moment M_5, m^2'
+p \
+'../postProcessing/probes/0/moment.5.populationBalance' u 1:2 w l ti 'OpenFOAM', \
+refcase u 't':'M5' w l dt 2 ti 'Reference'
 
 unset multiplot
 

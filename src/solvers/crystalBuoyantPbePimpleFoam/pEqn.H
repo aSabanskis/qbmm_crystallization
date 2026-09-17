@@ -28,9 +28,16 @@ MRF.makeRelative(fvc::interpolate(rho), phiHbyA);
 // Update the pressure BCs to ensure flux consistency
 constrainPressure(p_rgh, rho, U, phiHbyA, rhorAUf, MRF);
 
+volScalarField ddtRho(fvc::ddt(rho));
+
+if (closedDomainCompatibility && !compressible && p_rgh.needReference())
+{
+    ddtRho -= fvc::domainIntegrate(ddtRho)/totalVolume;
+}
+
 fvScalarMatrix p_rghDDtEqn
 (
-    fvc::ddt(rho) + psi*correction(fvm::ddt(p_rgh))
+    ddtRho + psi*correction(fvm::ddt(p_rgh))
   + fvc::div(phiHbyA)
   ==
     fvOptions(psi, p_rgh, rho.name())

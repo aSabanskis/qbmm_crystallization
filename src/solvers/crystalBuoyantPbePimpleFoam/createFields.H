@@ -113,6 +113,13 @@ if (p_rgh.needReference())
 
 dimensionedScalar initialMass("initialMass", fvc::domainIntegrate(rho));
 
+const dimensionedScalar totalVolume("totalVolume", dimVolume, gSum(mesh.V()));
+
+const bool closedDomainCompatibility
+(
+    pimple.dict().getOrDefault<bool>("closedDomainCompatibility", true)
+);
+
 #include "createDpdt.H"
 
 #include "createK.H"

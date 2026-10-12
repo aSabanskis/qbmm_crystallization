@@ -1,0 +1,163 @@
+/*---------------------------------------------------------------------------*\
+  Solution crystallization nucleation model for OpenQBMM.
+\*---------------------------------------------------------------------------*/
+
+#include "solutionNucleation.H"
+#include "addToRunTimeSelectionTable.H"
+
+namespace Foam
+{
+namespace populationBalanceSubModels
+{
+namespace nucleationModels
+{
+    defineTypeNameAndDebug(solutionNucleation, 0);
+
+    addToRunTimeSelectionTable
+    (
+        nucleationModel,
+        solutionNucleation,
+        dictionary
+    );
+}
+}
+}
+
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
+::solutionNucleation
+(
+    const dictionary& dict,
+    const fvMesh& mesh
+)
+:
+    nucleationModel(dict, mesh),
+    kS_(dict.get<scalar>("kS")),
+    Es_("Es", dimEnergy/dimMoles, dict),
+    R_("R", dimEnergy/dimMoles/dimTemperature, dict),
+    s_(dict.lookupOrDefault<scalar>("s", 1.0)),
+    Ms_(dict.lookupOrDefault<scalar>("Ms", 2.0)),
+    rhoCrystal_(dict.lookupOrDefault<scalar>("rhoCrystal", 1.2e-9)),
+    kv_(dict.lookupOrDefault<scalar>("kv", 1.0)),
+    nucleationSize_(dict.lookupOrDefault<scalar>("nucleationSize", 0)),
+    epsilonExp_(dict.lookupOrDefault<scalar>("epsilonExp", 0)),
+    epsilonRef_(dict.lookupOrDefault<scalar>("epsilonRef", 1.0)),
+    epsilonName_(dict.lookupOrDefault<word>("epsilon", "epsilon")),
+    CsatCoeffs_(dict.get<scalarList>("CsatCoeffs")),
+    relativeSupersaturation_(false),
+    C_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("C", "C"))),
+    T_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("T", "T"))),
+    m3_
+    (
+        mesh.lookupObject<volScalarField>
+        (
+            dict.lookupOrDefault<word>("m3", "moment.3.populationBalance")
+        )
+    ),
+    epsilonPtr_(nullptr)
+{
+    if (CsatCoeffs_.size() != 5)
+    {
+        FatalIOErrorInFunction(dict)
+            << "CsatCoeffs must contain 5 polynomial coefficients, "
+            << "highest order first." << exit(FatalIOError);
+    }
+
+    const word ss(dict.getOrDefault<word>("supersaturation", "absolute"));
+
+    if (ss == "relative")
+    {
+        relativeSupersaturation_ = true;
+    }
+    else if (ss != "absolute")
+    {
+        FatalIOErrorInFunction(dict)
+            << "supersaturation must be absolute or relative, not " << ss
+            << exit(FatalIOError);
+    }
+
+    if (mag(epsilonExp_) > SMALL)
+    {
+        epsilonPtr_ = &mesh.lookupObject<volScalarField>(epsilonName_);
+
+        Info<< "solutionNucleation: secondary nucleation scaled by ("
+            << epsilonName_ << '/' << epsilonRef_ << ")^" << epsilonExp_
+            << endl;
+    }
+}
+
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
+::~solutionNucleation()
+{}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+Foam::scalar
+Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
+::saturationConcentration(const scalar T) const
+{
+    const scalar Tc = T - scalar(273.15);
+    const scalarList& a = CsatCoeffs_;
+
+    return ((((a[0]*Tc + a[1])*Tc + a[2])*Tc + a[3])*Tc + a[4]);
+}
+
+
+Foam::scalar
+Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
+::nucleationSource
+(
+    const label& momentOrder,
+    const label celli,
+    const label environment
+) const
+{
+    const scalar Csat = saturationConcentration(T_[celli]);
+
+    // Driving force: C - Csat, or (C - Csat)/Csat
+    scalar deltaC = max(C_[celli] - Csat, scalar(0));
+
+    if (relativeSupersaturation_)
+    {
+        deltaC /= Csat;
+    }
+
+    if (deltaC < SMALL)
+    {
+        return 0.0;
+    }
+
+    // Suspension density, mg solid / mL
+    const scalar M = max(kv_*rhoCrystal_*m3_[celli], scalar(0));
+
+    scalar B =
+        kS_
+       *Foam::pow(deltaC, s_)
+       *Foam::exp(-Es_.value()/(R_.value()*T_[celli]))
+       *Foam::pow(M, Ms_);
+
+    if (epsilonPtr_)
+    {
+        B *=
+            Foam::pow
+            (
+                max((*epsilonPtr_)[celli], scalar(0))/epsilonRef_,
+                epsilonExp_
+            );
+    }
+
+    if (momentOrder == 0)
+    {
+        return B;
+    }
+
+    return B*Foam::pow(nucleationSize_, momentOrder);
+}
+
+// ************************************************************************* //

@@ -1,0 +1,52 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+    Coded boundary conditions.
+
+    The two numbers that define a run are set here:
+      * omega       angular velocity of the cylindrical side wall [rad/s]
+                    (0 -> quiescent vessel, cooled by natural convection only)
+      * coolingRate wall cooling rate [degC/min]
+
+    studies/stirring/make_cases.py substitutes them when it generates the
+    stirred / quiescent pair.
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      codeDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+coolingWall
+{
+    code
+    #{
+        const scalar t       = this->db().time().value();
+        const scalar T_init  = 308.15;          // 35 degC
+        const scalar T_final = 283.15;          // 10 degC
+        const scalar beta    = 1.0/60.0;        // coolingRate [degC/min] / 60
+
+        operator==(max(T_final, T_init - beta*t));
+    #};
+}
+
+
+rotatingWall
+{
+    code
+    #{
+        const scalar omega = 5.0;               // omega [rad/s]
+
+        vectorField& fld = *this;
+        const vectorField& Cf = patch().Cf();
+
+        forAll(fld, i)
+        {
+            fld[i] = vector(-omega*Cf[i].y(), omega*Cf[i].x(), 0);
+        }
+    #};
+}
+
+// ************************************************************************* //

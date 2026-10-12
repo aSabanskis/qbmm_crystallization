@@ -1,0 +1,71 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+    Line samples for post-processing:
+
+        postProcess -dict system/sampleLines -latestTime
+
+    radial   : r = 0 .. 40 mm at mid height
+    axial    : z = 0 .. 70 mm on the axis
+    axialWall: z = 0 .. 70 mm close to the cooled side wall
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      sampleLines;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+sampleLines
+{
+    type            sets;
+    libs            (sampling);
+    setFormat       raw;
+    interpolationScheme cellPoint;
+    executeControl  timeStep;
+    executeInterval 1;
+    writeControl    timeStep;
+    writeInterval   1;
+
+    fields
+    (
+        T C sigma
+        moment.0.populationBalance
+        moment.1.populationBalance
+        moment.3.populationBalance
+        magU
+    );
+
+    sets
+    (
+        radial
+        {
+            type        uniform;
+            axis        distance;
+            start       (0.0000 0 0.035);
+            end         (0.0398 0 0.035);
+            nPoints     60;
+        }
+
+        axial
+        {
+            type        uniform;
+            axis        distance;
+            start       (0.001 0 0.0005);
+            end         (0.001 0 0.0695);
+            nPoints     60;
+        }
+
+        axialWall
+        {
+            type        uniform;
+            axis        distance;
+            start       (0.0380 0 0.0005);
+            end         (0.0380 0 0.0695);
+            nPoints     60;
+        }
+    );
+}
+
+// ************************************************************************* //

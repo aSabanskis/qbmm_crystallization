@@ -1,0 +1,12 @@
+#!/bin/sh
+cd "${0%/*}" || exit 1
+
+if [ -z "$QBMM_DIR" ]; then
+    echo "QBMM_DIR is not set - point it at the OpenQBMM source tree." 1>&2
+    exit 1
+fi
+
+./src/models/Allwmake   || exit 1
+./src/solvers/Allwmake  || exit 1
+
+# ----------------------------------------------------------------- end-of-file

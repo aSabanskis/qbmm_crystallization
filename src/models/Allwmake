@@ -4,3 +4,7 @@ cd ${0%/*} || exit 1
 echo "=== Building solutionGrowth ==="
 
 wmake libso solutionGrowth
+
+echo "=== Building solutionNucleation ==="
+
+wmake libso solutionNucleation

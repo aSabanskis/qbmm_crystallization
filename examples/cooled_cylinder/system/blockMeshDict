@@ -1,0 +1,101 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+    Jacketed cylindrical crystallizer, 80 mm diameter x 70 mm high = 349.6 mL,
+    i.e. the batch volume of the experiments of Liu et al. (2020).
+
+    O-grid: one square core block plus four outer blocks whose local x runs
+    radially outwards.  All three walls are cooled and the side wall may
+    rotate, so the boundary layers that matter sit against the side wall and
+    against the two end walls.  rGrade and zGrade cluster the cells there.
+
+        rGrade  size of the cell at the side wall / size at the core block
+        zGrade  size of the cell at an end wall / size at mid height
+
+    Both are 1 for a uniform mesh; 0.25 makes the wall cells about half the
+    size they would have with the same cell count spread uniformly.
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+convertToMeters 0.001;
+
+nr      10;      // cells across the core block / in the radial direction
+nz      20;     // cells in the axial direction
+
+rGrade  0.25;
+zGrade  0.25;
+
+// Axial grading is symmetric about mid height: the first half expands away
+// from the bottom wall, the second half contracts towards the top wall.
+zExpand   #eval "1.0/$zGrade";
+zContract #eval "$zGrade";
+
+axial ((0.5 0.5 $zExpand) (0.5 0.5 $zContract));
+
+vertices
+(
+    (16.0 0.0 0)   (0.0 16.0 0)   (-16.0 0.0 0)   (0.0 -16.0 0)
+    (40 0.0 0)     (0.0 40 0)     (-40 0.0 0)     (0.0 -40 0)
+    (16.0 0.0 70)  (0.0 16.0 70)  (-16.0 0.0 70)  (0.0 -16.0 70)
+    (40 0.0 70)    (0.0 40 70)    (-40 0.0 70)    (0.0 -40 70)
+);
+
+blocks
+(
+    hex (0 1 2 3 8 9 10 11)   ($nr $nr $nz) simpleGrading (1 1 $axial)
+    hex (0 4 5 1 8 12 13 9)   ($nr $nr $nz) simpleGrading ($rGrade 1 $axial)
+    hex (1 5 6 2 9 13 14 10)  ($nr $nr $nz) simpleGrading ($rGrade 1 $axial)
+    hex (2 6 7 3 10 14 15 11) ($nr $nr $nz) simpleGrading ($rGrade 1 $axial)
+    hex (3 7 4 0 11 15 12 8)  ($nr $nr $nz) simpleGrading ($rGrade 1 $axial)
+);
+
+edges
+(
+    arc 4 5 (28.284271247461902 28.284271247461902 0)
+    arc 5 6 (-28.284271247461902 28.284271247461902 0)
+    arc 6 7 (-28.284271247461902 -28.284271247461902 0)
+    arc 7 4 (28.284271247461902 -28.284271247461902 0)
+    arc 12 13 (28.284271247461902 28.284271247461902 70)
+    arc 13 14 (-28.284271247461902 28.284271247461902 70)
+    arc 14 15 (-28.284271247461902 -28.284271247461902 70)
+    arc 15 12 (28.284271247461902 -28.284271247461902 70)
+);
+
+boundary
+(
+    bottom
+    {
+        type wall;
+        faces
+        (
+            (0 1 2 3) (0 4 5 1) (1 5 6 2) (2 6 7 3) (3 7 4 0)
+        );
+    }
+
+    top
+    {
+        type wall;
+        faces
+        (
+            (11 10 9 8) (8 9 13 12) (9 10 14 13) (10 11 15 14) (11 8 12 15)
+        );
+    }
+
+    side
+    {
+        type wall;
+        faces
+        (
+            (4 12 13 5) (5 13 14 6) (6 14 15 7) (7 15 12 4)
+        );
+    }
+);
+
+mergePatchPairs ();
+
+// ************************************************************************* //

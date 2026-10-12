@@ -32,7 +32,7 @@ maxDeltaT       1;
 
 writeControl    runTime;
 
-writeInterval   30000;
+writeInterval   30;
 
 purgeWrite      0;
 
@@ -90,6 +90,7 @@ functions
 libs
 (
     "libcrystalGrowthModels.so"
+    "libcrystalNucleationModels.so"
 );
 
 // ************************************************************************* //

@@ -38,13 +38,14 @@ divSchemes
     div(phiv,p)     Gauss linear;
     div(phi,K)      Gauss linear;
     div(phi,Ekp)    Gauss linear;
-    div(phi,C)    Gauss linear;
+    div(phiByRho,C) Gauss limitedLinear 1;
     div(R)          Gauss linear;
     div((rho*R))    Gauss linear;
     div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
     div(((rho*(thermo:mu|thermo:rho))*dev2(T(grad(U))))) Gauss linear;
     div(((rho*(thermo:mu|rho))*dev2(T(grad(U))))) Gauss linear;
     div(phi,moment) Gauss upwind;
+    div(phiByRho,moment.3.populationBalance) Gauss upwind;
 }
 
 laplacianSchemes

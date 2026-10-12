@@ -1,0 +1,42 @@
+/*--------------------------------*- C++ -*----------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     crystalBatchPbeFoam;
+
+startFrom       startTime;
+startTime       0;
+stopAt          endTime;
+
+// Val1 of Liu et al. (2020): 150 min
+endTime         9000;
+
+deltaT          1;
+
+writeControl    runTime;
+writeInterval   300;
+
+purgeWrite      0;
+writeFormat     ascii;
+writePrecision  10;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable yes;
+
+suppressSolverInfo yes;
+
+libs
+(
+    "libcrystalGrowthModels.so"
+    "libcrystalNucleationModels.so"
+);
+
+// ************************************************************************* //

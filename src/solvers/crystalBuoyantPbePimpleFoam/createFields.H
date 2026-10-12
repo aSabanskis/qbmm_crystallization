@@ -113,6 +113,13 @@ if (p_rgh.needReference())
 
 dimensionedScalar initialMass("initialMass", fvc::domainIntegrate(rho));
 
+const dimensionedScalar totalVolume("totalVolume", dimVolume, gSum(mesh.V()));
+
+const bool closedDomainCompatibility
+(
+    pimple.dict().getOrDefault<bool>("closedDomainCompatibility", true)
+);
+
 #include "createDpdt.H"
 
 #include "createK.H"
@@ -124,6 +131,49 @@ dimensionedScalar initialMass("initialMass", fvc::domainIntegrate(rho));
 
 const dimensionedScalar rhoMax("rhoMax", dimDensity, GREAT, pimple.dict());
 const dimensionedScalar rhoMin("rhoMin", dimDensity, Zero, pimple.dict());
+
+Info<< "Reading crystallizationProperties\n" << endl;
+
+IOdictionary crystallizationProperties
+(
+    IOobject
+    (
+        "crystallizationProperties",
+        runTime.constant(),
+        mesh,
+        IOobject::MUST_READ_IF_MODIFIED,
+        IOobject::NO_WRITE
+    )
+);
+
+dimensionedScalar rhoCrystal
+(
+    "rhoCrystal",
+    dimMass/dimVolume,
+    crystallizationProperties
+);
+
+// Solubility polynomial, Csat(Tc) with Tc in degC, highest order first.  It has
+// to match the one the growth and nucleation models use, so that the solute
+// balance and the kinetics agree on where equilibrium is.
+const scalarList CsatCoeffs
+(
+    crystallizationProperties.get<scalarList>("CsatCoeffs")
+);
+
+if (CsatCoeffs.size() != 5)
+{
+    FatalIOErrorInFunction(crystallizationProperties)
+        << "CsatCoeffs must be a quartic in T [degC], i.e. 5 coefficients, "
+        << "but " << CsatCoeffs.size() << " were given"
+        << exit(FatalIOError);
+}
+
+auto saturation = [](const scalar T, const scalarList& a) -> scalar
+{
+    const scalar Tc = T - 273.15;
+    return ((((a[0]*Tc + a[1])*Tc + a[2])*Tc + a[3])*Tc + a[4]);
+};
 
 Info<< "Reading populationBalanceProperties\n" << endl;
 

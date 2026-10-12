@@ -67,15 +67,41 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
     minAbscissa_(dict.lookupOrDefault("minAbscissa", scalar(0))),
     maxAbscissa_(dict.lookupOrDefault("maxAbscissa", GREAT)),
     kG_("kG", dimLength/dimTime, dict),
-    Csat0_("Csat0", dimMass/dimVolume, dict),
-    dCsatdT_("dCsatdT", dimMass/dimVolume/dimTemperature, dict),
-    Tref_("Tref", dimTemperature, dict),
     g_(dict.lookupOrDefault("g", scalar(1))),
     Eg_("Eg", dimEnergy/dimMoles, dict),
-    R_("R", dimEnergy/dimMoles/dimTemperature, dict),
     alphaG_("alphaG", inv(dimLength), dict),
-    Lg_(dict.lookupOrDefault("Lg", scalar(1)))
-{}
+    Lg_(dict.lookupOrDefault("Lg", scalar(1))),
+    kD_(dict.lookupOrDefault<scalar>("kD", 0)),
+    d_(dict.lookupOrDefault<scalar>("d", 1)),
+    Ed_(dict.lookupOrDefault<scalar>("Ed", 0)),
+    alphaD_(dict.lookupOrDefault<scalar>("alphaD", 0)),
+    Ld_(dict.lookupOrDefault<scalar>("Ld", 0)),
+    minAbscissaD_(dict.lookupOrDefault<scalar>("minAbscissaD", 0)),
+    R_("R", dimEnergy/dimMoles/dimTemperature, dict),
+    CsatCoeffs_(dict.get<scalarList>("CsatCoeffs")),
+    relativeSupersaturation_(false),
+    celli_(0)
+{
+    if (CsatCoeffs_.size() != 5)
+    {
+        FatalIOErrorInFunction(dict)
+            << "CsatCoeffs must contain 5 polynomial coefficients, "
+            << "highest order first." << exit(FatalIOError);
+    }
+
+    const word ss(dict.getOrDefault<word>("supersaturation", "absolute"));
+
+    if (ss == "relative")
+    {
+        relativeSupersaturation_ = true;
+    }
+    else if (ss != "absolute")
+    {
+        FatalIOErrorInFunction(dict)
+            << "supersaturation must be absolute or relative, not " << ss
+            << exit(FatalIOError);
+    }
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -94,15 +120,12 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
     const scalar T
 ) const
 {
-    const scalar TC = T - scalar(273.15);
+    const scalar Tc = T - scalar(273.15);
+    const scalarList& a = CsatCoeffs_;
 
-    return
-          4e-5*Foam::pow(TC, 4)
-        - 0.0034*Foam::pow(TC, 3)
-        + 0.1024*Foam::pow(TC, 2)
-        - 0.6255*TC
-        + 13.237;
+    return ((((a[0]*Tc + a[1])*Tc + a[2])*Tc + a[3])*Tc + a[4]);
 }
+
 
 Foam::scalar
 Foam::populationBalanceSubModels::growthModels::solutionGrowth
@@ -115,14 +138,31 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
 {
     const scalar Csat = saturationConcentration(T);
 
-    const scalar deltaC =
-        max(C - Csat, scalar(0));
+    // Driving force: C - Csat, or (C - Csat)/Csat
+    const scalar scale = relativeSupersaturation_ ? 1.0/Csat : 1.0;
+
+    if (C >= Csat)
+    {
+        return
+            kG_.value()
+           *Foam::pow((C - Csat)*scale, g_)
+           *Foam::exp(-Eg_.value()/(R_.value()*T))
+           *Foam::pow(1.0 + alphaG_.value()*L, Lg_);
+    }
+
+    if (mag(kD_) < SMALL || L < minAbscissaD_)
+    {
+        return 0.0;
+    }
+
+    // kD is negative, so the returned rate shrinks the crystals
     return
-        kG_.value()
-       *Foam::pow(deltaC, g_)
-       *Foam::exp(-Eg_.value()/(R_.value()*T))
-       *Foam::pow(1.0 + alphaG_.value()*L, Lg_);
+        kD_
+       *Foam::pow((Csat - C)*scale, d_)
+       *Foam::exp(-Ed_/(R_.value()*T))
+       *Foam::pow(1.0 + alphaD_*L, Ld_);
 }
+
 
 Foam::scalar
 Foam::populationBalanceSubModels::growthModels::solutionGrowth::Kg
@@ -142,11 +182,41 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth::Kg
         growthRate
         (
             abscissa,
-            C[environment],
-            T[environment]
+            C[celli_],
+            T[celli_]
         )
        *pos0(abscissa - minAbscissa_)
        *neg0(abscissa - maxAbscissa_);
+}
+
+
+Foam::scalar
+Foam::populationBalanceSubModels::growthModels::solutionGrowth
+::phaseSpaceConvection
+(
+    const labelList& momentOrder,
+    const label celli,
+    const scalarQuadratureApproximation& quadrature
+)
+{
+    celli_ = celli;
+
+    return growthModel::phaseSpaceConvection(momentOrder, celli, quadrature);
+}
+
+
+Foam::scalar
+Foam::populationBalanceSubModels::growthModels::solutionGrowth
+::phaseSpaceConvection
+(
+    const labelList& momentOrder,
+    const label celli,
+    const velocityQuadratureApproximation& quadrature
+)
+{
+    celli_ = celli;
+
+    return growthModel::phaseSpaceConvection(momentOrder, celli, quadrature);
 }
 
 // ************************************************************************* //

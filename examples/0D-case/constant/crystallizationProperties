@@ -1,0 +1,28 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2412                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      binary;
+    arch        "LSB;label=32;scalar=64";
+    class       dictionary;
+    location    "constant";
+    object      crystallizationProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+DC         [m^2/s]  0;
+rhoCrystal [kg/m^3] 1200;
+kv                  0.523598775598;
+
+
+// Csat = 30 + 0.2*(T - 298.15) kg/m3, as a polynomial in T [degC],
+// highest order first; same as the growth model
+CsatCoeffs          (0 0 0 0.2 25);
+
+// ************************************************************************* //

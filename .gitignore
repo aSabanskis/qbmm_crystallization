@@ -5,6 +5,8 @@ platforms/
 *.dep
 *.so
 *.a
+*.dat
+*.pdf
 __pycache__/
 
 # OpenFOAM run artefacts

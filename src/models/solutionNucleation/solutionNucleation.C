@@ -45,7 +45,6 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
     epsilonExp_(dict.lookupOrDefault<scalar>("epsilonExp", 0)),
     epsilonRef_(dict.lookupOrDefault<scalar>("epsilonRef", 1.0)),
     epsilonName_(dict.lookupOrDefault<word>("epsilon", "epsilon")),
-    CsatCoeffs_(dict.get<scalarList>("CsatCoeffs")),
     relativeSupersaturation_(false),
     C_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("C", "C"))),
     T_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("T", "T"))),
@@ -58,12 +57,15 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
     ),
     epsilonPtr_(nullptr)
 {
-    if (CsatCoeffs_.size() != 5)
-    {
-        FatalIOErrorInFunction(dict)
-            << "CsatCoeffs must contain 5 polynomial coefficients, "
-            << "highest order first." << exit(FatalIOError);
-    }
+    solubilityCurve_.reset
+    (
+        Function1<scalar>::New
+        (
+            "solubility",
+            dict,
+            &mesh
+        ).ptr()
+    );
 
     const word ss(dict.getOrDefault<word>("supersaturation", "absolute"));
 
@@ -103,9 +105,8 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
 ::saturationConcentration(const scalar T) const
 {
     const scalar Tc = T - scalar(273.15);
-    const scalarList& a = CsatCoeffs_;
 
-    return ((((a[0]*Tc + a[1])*Tc + a[2])*Tc + a[3])*Tc + a[4]);
+    return solubilityCurve_->value(Tc);
 }
 
 

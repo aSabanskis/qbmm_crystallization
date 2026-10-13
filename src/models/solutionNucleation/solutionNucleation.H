@@ -42,6 +42,7 @@ SourceFiles
 #ifndef solutionNucleation_H
 #define solutionNucleation_H
 
+#include "Function1.H"
 #include "nucleationModel.H"
 
 namespace Foam
@@ -88,8 +89,8 @@ private:
         scalar epsilonRef_;
         word epsilonName_;
 
-        //- Coefficients of the solubility polynomial, Csat(Tc) with Tc in degC
-        scalarList CsatCoeffs_;
+        //- Solubility curve, Csat(Tc) with Tc in degC
+        autoPtr<Function1<scalar>> solubilityCurve_;
 
         //- Driving force (C - Csat)/Csat instead of C - Csat
         bool relativeSupersaturation_;

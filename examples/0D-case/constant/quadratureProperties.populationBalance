@@ -15,7 +15,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fieldMomentInversion    basicFieldMomentInversion;
+fieldMomentInversion    extendedFieldMomentInversion;
 
 extendedMomentInversion
 {
@@ -51,15 +51,17 @@ moments
     (2)
     (3)
     (4)
-    (5)
+    // for basicFieldMomentInversion
+    // (5)
 );
 
 nodes
 (
     (0)
     (1)
-    (2)
-    (3)
+    // for basicFieldMomentInversion
+    // (2)
+    // (3)
 );
 
 // ************************************************************************* //

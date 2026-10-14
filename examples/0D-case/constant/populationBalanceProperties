@@ -71,6 +71,8 @@ univariateCoeffs
         //             + 13.237;
         //     #};
         // }
+
+        printCoeffs     on;
     }
     nucleation      off;
     nucleationModel

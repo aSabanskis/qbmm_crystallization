@@ -79,6 +79,7 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
     minAbscissaD_(dict.lookupOrDefault<scalar>("minAbscissaD", 0)),
     R_("R", dimEnergy/dimMoles/dimTemperature, dict),
     relativeSupersaturation_(false),
+    printCoeffs_(dict.getOrDefault<Switch>("printCoeffs", false)),
     celli_(0)
 {
     solubilityCurve_.reset
@@ -103,6 +104,8 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
             << "supersaturation must be absolute or relative, not " << ss
             << exit(FatalIOError);
     }
+
+    printCoeffs();
 }
 
 
@@ -218,6 +221,38 @@ Foam::populationBalanceSubModels::growthModels::solutionGrowth
     celli_ = celli;
 
     return growthModel::phaseSpaceConvection(momentOrder, celli, quadrature);
+}
+
+
+// * * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * //
+
+void
+Foam::populationBalanceSubModels::growthModels::solutionGrowth
+::printCoeffs()
+{
+    if (!printCoeffs_)
+    {
+        return;
+    }
+
+    // TODO: do not print the name of a dimensionedScalar twice
+    Info<< "Coefficients:" << endl;
+    Info<< "minAbscissa " << minAbscissa_ << endl;
+    Info<< "maxAbscissa " << maxAbscissa_ << endl;
+    Info<< "kG " << kG_ << endl;
+    Info<< "g " << g_ << endl;
+    Info<< "Eg " << Eg_ << endl;
+    Info<< "alphaG " << alphaG_ << endl;
+    Info<< "Lg " << Lg_ << endl;
+    Info<< "kD " << kD_ << endl;
+    Info<< "d " << d_ << endl;
+    Info<< "Ed " << Ed_ << endl;
+    Info<< "alphaD " << alphaD_ << endl;
+    Info<< "Ld " << Ld_ << endl;
+    Info<< "minAbscissaD " << minAbscissaD_ << endl;
+    Info<< "R " << R_ << endl;
+    Info<< "relativeSupersaturation " << relativeSupersaturation_ << endl;
+    Info<< "solubilityCurve " << *solubilityCurve_ << endl;
 }
 
 // ************************************************************************* //

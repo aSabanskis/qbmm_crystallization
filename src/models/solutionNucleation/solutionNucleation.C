@@ -46,6 +46,7 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
     epsilonRef_(dict.lookupOrDefault<scalar>("epsilonRef", 1.0)),
     epsilonName_(dict.lookupOrDefault<word>("epsilon", "epsilon")),
     relativeSupersaturation_(false),
+    printCoeffs_(dict.getOrDefault<Switch>("printCoeffs", false)),
     C_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("C", "C"))),
     T_(mesh.lookupObject<volScalarField>(dict.lookupOrDefault<word>("T", "T"))),
     m3_
@@ -88,6 +89,8 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
             << epsilonName_ << '/' << epsilonRef_ << ")^" << epsilonExp_
             << endl;
     }
+
+    printCoeffs();
 }
 
 
@@ -159,6 +162,35 @@ Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
     }
 
     return B*Foam::pow(nucleationSize_, momentOrder);
+}
+
+
+// * * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * //
+
+void
+Foam::populationBalanceSubModels::nucleationModels::solutionNucleation
+::printCoeffs()
+{
+    if (!printCoeffs_)
+    {
+        return;
+    }
+
+    // TODO: do not print the name of a dimensionedScalar twice
+    Info<< "Coefficients:" << endl;
+    Info<< "kS " << kS_ << endl;
+    Info<< "Es " << Es_ << endl;
+    Info<< "R " << R_ << endl;
+    Info<< "s " << s_ << endl;
+    Info<< "Ms " << Ms_ << endl;
+    Info<< "rhoCrystal " << rhoCrystal_ << endl;
+    Info<< "kv " << kv_ << endl;
+    Info<< "nucleationSize " << nucleationSize_ << endl;
+    Info<< "epsilonExp " << epsilonExp_ << endl;
+    Info<< "epsilonRef " << epsilonRef_ << endl;
+    Info<< "epsilon " << epsilonName_ << endl;
+    Info<< "relativeSupersaturation " << relativeSupersaturation_ << endl;
+    Info<< "solubilityCurve " << *solubilityCurve_ << endl;
 }
 
 // ************************************************************************* //

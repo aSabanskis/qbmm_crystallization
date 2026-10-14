@@ -95,6 +95,9 @@ private:
         //- Driving force (C - Csat)/Csat instead of C - Csat
         bool relativeSupersaturation_;
 
+        //- Flag to print the model coeffs at run-time
+        Switch printCoeffs_;
+
         //- Concentration, temperature and third moment fields
         const volScalarField& C_;
         const volScalarField& T_;
@@ -108,6 +111,13 @@ private:
 
         //- Solubility [mg/mL] at temperature T [K]
         scalar saturationConcentration(const scalar T) const;
+
+
+protected:
+    // Protected Member Functions
+
+        //- Print model coefficients
+        virtual void printCoeffs();
 
 
 public:

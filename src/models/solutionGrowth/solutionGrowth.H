@@ -127,6 +127,9 @@ private:
         //- Driving force (C - Csat)/Csat instead of C - Csat
         bool relativeSupersaturation_;
 
+        //- Flag to print the model coeffs at run-time
+        Switch printCoeffs_;
+
         //- Cell currently being integrated.
         //  The Kg() interface of OpenQBMM does not carry a cell index, only an
         //  environment index, so a growth rate that depends on the local
@@ -134,6 +137,14 @@ private:
         //  with the values of cell 0.  phaseSpaceConvection() is given the
         //  cell, so it is recorded here on the way in.
         mutable label celli_;
+
+
+protected:
+    // Protected Member Functions
+
+        //- Print model coefficients
+        virtual void printCoeffs();
+
 
 public:
 
